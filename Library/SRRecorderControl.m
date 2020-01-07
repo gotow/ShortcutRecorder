@@ -12,6 +12,8 @@
 //      Jamie Kirkpatrick
 //      Ilya Kulakov
 
+#include <limits.h>
+
 #import "SRRecorderControl.h"
 #import "SRKeyCodeTransformer.h"
 #import "SRModifierFlagsTransformer.h"
@@ -91,7 +93,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     NSToolTipTag _snapBackButtonToolTipTag;
 
     CGFloat _shapeXRadius;
-    CGFloat _shapeYRadious;
+    CGFloat _shapeYRadius;
 }
 
 - (instancetype)initWithFrame:(NSRect)aFrameRect
@@ -100,47 +102,53 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     if (self)
     {
-        _allowedModifierFlags = SRCocoaModifierFlagsMask;
-        _requiredModifierFlags = 0;
-        _allowsEmptyModifierFlags = NO;
-        _drawsASCIIEquivalentOfShortcut = YES;
-        _allowsEscapeToCancelRecording = YES;
-        _allowsDeleteToClearShortcutAndEndRecording = YES;
-        _enabled = YES;
-        _mouseTrackingButtonTag = _SRRecorderControlInvalidButtonTag;
-        _snapBackButtonToolTipTag = NSIntegerMax;
-
-        if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
-        {
-            self.translatesAutoresizingMaskIntoConstraints = NO;
-
-            [self setContentHuggingPriority:NSLayoutPriorityDefaultLow
-                             forOrientation:NSLayoutConstraintOrientationHorizontal];
-            [self setContentHuggingPriority:NSLayoutPriorityRequired
-                             forOrientation:NSLayoutConstraintOrientationVertical];
-
-            [self setContentCompressionResistancePriority:NSLayoutPriorityDefaultLow
-                                           forOrientation:NSLayoutConstraintOrientationHorizontal];
-            [self setContentCompressionResistancePriority:NSLayoutPriorityRequired
-                                           forOrientation:NSLayoutConstraintOrientationVertical];
-        }
-
-        if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
-        {
-            _shapeXRadius = _SRRecorderControlShapeXRadius;
-            _shapeYRadious = _SRRecorderControlShapeYRadius;
-        }
-        else
-        {
-            _shapeXRadius = _SRRecorderControlYosemiteShapeXRadius;
-            _shapeYRadious = _SRRecorderControlYosemiteShapeYRadius;
-        }
-
-        [self setToolTip:SRLoc(@"Click to record shortcut")];
-        [self updateTrackingAreas];
+        [self _initInternalState];
+        _font = [NSFont labelFontOfSize:[NSFont systemFontSize]];
     }
 
     return self;
+}
+
+- (void)_initInternalState
+{
+    _allowsEmptyModifierFlags = NO;
+    _drawsASCIIEquivalentOfShortcut = YES;
+    _allowsEscapeToCancelRecording = YES;
+    _allowsDeleteToClearShortcutAndEndRecording = YES;
+    _enabled = YES;
+    _allowedModifierFlags = SRCocoaModifierFlagsMask;
+    _requiredModifierFlags = 0;
+    _mouseTrackingButtonTag = _SRRecorderControlInvalidButtonTag;
+    _snapBackButtonToolTipTag = NSIntegerMax;
+
+    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
+    {
+        self.translatesAutoresizingMaskIntoConstraints = NO;
+
+        [self setContentHuggingPriority:NSLayoutPriorityDefaultLow
+                         forOrientation:NSLayoutConstraintOrientationHorizontal];
+        [self setContentHuggingPriority:NSLayoutPriorityRequired
+                         forOrientation:NSLayoutConstraintOrientationVertical];
+
+        [self setContentCompressionResistancePriority:NSLayoutPriorityDefaultLow
+                                       forOrientation:NSLayoutConstraintOrientationHorizontal];
+        [self setContentCompressionResistancePriority:NSLayoutPriorityRequired
+                                       forOrientation:NSLayoutConstraintOrientationVertical];
+    }
+
+    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
+    {
+        _shapeXRadius = _SRRecorderControlShapeXRadius;
+        _shapeYRadius = _SRRecorderControlShapeYRadius;
+    }
+    else
+    {
+        _shapeXRadius = _SRRecorderControlYosemiteShapeXRadius;
+        _shapeYRadius = _SRRecorderControlYosemiteShapeYRadius;
+    }
+
+    [self setToolTip:SRLoc(@"Click to record shortcut")];
+    [self updateTrackingAreas];
 }
 
 - (void)dealloc
@@ -151,8 +159,8 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 #pragma mark Properties
 
-- (void)setAllowedModifierFlags:(NSUInteger)newAllowedModifierFlags
-          requiredModifierFlags:(NSUInteger)newRequiredModifierFlags
+- (void)setAllowedModifierFlags:(NSEventModifierFlags)newAllowedModifierFlags
+          requiredModifierFlags:(NSEventModifierFlags)newRequiredModifierFlags
        allowsEmptyModifierFlags:(BOOL)newAllowsEmptyModifierFlags
 {
     newAllowedModifierFlags &= SRCocoaModifierFlagsMask;
@@ -264,8 +272,14 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     [self setNeedsDisplay:YES];
     NSAccessibilityPostNotification(self, NSAccessibilityTitleChangedNotification);
 
-    if (self.window.firstResponder == self && ![self canBecomeKeyView])
-        [self.window makeFirstResponder:nil];
+    if (self.window.firstResponder == self && ![self canBecomeKeyView]) {
+        NSView *newKeyView;
+        for(newKeyView = self.superview; newKeyView; newKeyView = newKeyView.superview)
+            if([newKeyView canBecomeKeyView])
+                break;
+        [self.window makeFirstResponder:newKeyView];
+        [self.window makeKeyWindow];
+    }
 
     if ([self.delegate respondsToSelector:@selector(shortcutRecorderDidEndRecording:)])
         [self.delegate shortcutRecorderDidEndRecording:self];
@@ -286,7 +300,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     return [NSBezierPath bezierPathWithRoundedRect:shapeBounds
                                            xRadius:_shapeXRadius
-                                           yRadius:_shapeYRadious];
+                                           yRadius:_shapeYRadius];
 }
 
 - (NSRect)rectForLabel:(NSString *)aLabel withAttributes:(NSDictionary *)anAttributes
@@ -319,6 +333,11 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
             }
         }
     }
+
+#ifdef DEBUG
+    if (labelRect.size.width < labelSize.width || labelRect.size.height < labelSize.height)
+        NSLog(@"WARNING: label rect (%@) is smaller than label size (%@). You may want to adjust size of the control.", NSStringFromRect(labelRect), NSStringFromSize(labelSize));
+#endif
 
     return labelRect;
 }
@@ -366,7 +385,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     if (self.isRecording)
     {
-        NSUInteger modifierFlags = [NSEvent modifierFlags] & self.allowedModifierFlags;
+        NSEventModifierFlags modifierFlags = [NSEvent modifierFlags] & self.allowedModifierFlags;
 
         if (modifierFlags)
             label = [[SRModifierFlagsTransformer sharedTransformer] transformedValue:@(modifierFlags)];
@@ -393,7 +412,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     if (self.isRecording)
     {
-        NSUInteger modifierFlags = [NSEvent modifierFlags] & self.allowedModifierFlags;
+        NSEventModifierFlags modifierFlags = [NSEvent modifierFlags] & self.allowedModifierFlags;
         label = [[SRModifierFlagsTransformer sharedPlainTransformer] transformedValue:@(modifierFlags)];
 
         if (![label length])
@@ -473,7 +492,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         NormalAttributes = @{
             NSParagraphStyleAttributeName: [p copy],
-            NSFontAttributeName: [NSFont labelFontOfSize:[NSFont systemFontSize]],
+            NSFontAttributeName: _font ? _font : [NSFont labelFontOfSize:[NSFont systemFontSize]],
             NSForegroundColorAttributeName: [NSColor controlTextColor]
         };
     });
@@ -491,7 +510,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         RecordingAttributes = @{
             NSParagraphStyleAttributeName: [p copy],
-            NSFontAttributeName: [NSFont labelFontOfSize:[NSFont systemFontSize]],
+            NSFontAttributeName: _font ? _font : [NSFont labelFontOfSize:[NSFont systemFontSize]],
             NSForegroundColorAttributeName: [NSColor disabledControlTextColor]
         };
     });
@@ -509,7 +528,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         DisabledAttributes = @{
             NSParagraphStyleAttributeName: [p copy],
-            NSFontAttributeName: [NSFont labelFontOfSize:[NSFont systemFontSize]],
+            NSFontAttributeName: _font ? _font : [NSFont labelFontOfSize:[NSFont systemFontSize]],
             NSForegroundColorAttributeName: [NSColor disabledControlTextColor]
         };
     });
@@ -521,75 +540,45 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 - (void)drawBackground:(NSRect)aDirtyRect
 {
-    [NSGraphicsContext saveGraphicsState];
-
     NSRect frame = self.bounds;
     frame.size.height = _SRRecorderControlHeight;
 
     if (![self needsToDrawRect:frame])
         return;
 
+    [NSGraphicsContext saveGraphicsState];
+    
+    frame = NSInsetRect(frame, 1, 1);
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:frame xRadius:_shapeXRadius yRadius:_shapeXRadius];
+    NSColor *pathColor, *fillColor;
+    
     if (self.isRecording)
     {
-        NSDrawThreePartImage(frame,
-                             _SRImages[3],
-                             _SRImages[4],
-                             _SRImages[5],
-                             NO,
-                             NSCompositeSourceOver,
-                             1.0,
-                             self.isFlipped);
+        pathColor = [NSColor underPageBackgroundColor];
+        fillColor = [NSColor controlColor];
     }
     else
     {
         if (self.isMainButtonHighlighted)
         {
-            if ([NSColor currentControlTint] == NSBlueControlTint)
-            {
-                NSDrawThreePartImage(frame,
-                                     _SRImages[0],
-                                     _SRImages[1],
-                                     _SRImages[2],
-                                     NO,
-                                     NSCompositeSourceOver,
-                                     1.0,
-                                     self.isFlipped);
-            }
-            else
-            {
-                NSDrawThreePartImage(frame,
-                                     _SRImages[6],
-                                     _SRImages[7],
-                                     _SRImages[8],
-                                     NO,
-                                     NSCompositeSourceOver,
-                                     1.0,
-                                     self.isFlipped);
-            }
+            pathColor = [NSColor underPageBackgroundColor];
+            fillColor = [NSColor selectedControlColor];
         }
         else if (self.enabled)
         {
-            NSDrawThreePartImage(frame,
-                                 _SRImages[9],
-                                 _SRImages[10],
-                                 _SRImages[11],
-                                 NO,
-                                 NSCompositeSourceOver,
-                                 1.0,
-                                 self.isFlipped);
+            pathColor = [NSColor underPageBackgroundColor];
+            fillColor = [NSColor controlColor];
         }
         else
         {
-            NSDrawThreePartImage(frame,
-                                 _SRImages[16],
-                                 _SRImages[17],
-                                 _SRImages[18],
-                                 NO,
-                                 NSCompositeSourceOver,
-                                 1.0,
-                                 self.isFlipped);
+            pathColor = [NSColor gridColor];
+            fillColor = [NSColor controlColor];
         }
     }
+    [pathColor setStroke];
+    [path stroke];
+    [fillColor setFill];
+    [path fill];
 
     [NSGraphicsContext restoreGraphicsState];
 }
@@ -687,6 +676,14 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     [NSGraphicsContext restoreGraphicsState];
 }
 
+- (CGFloat)backingScaleFactor
+{
+    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_6 || self.window == nil)
+        return 1.0;
+    else
+        return self.window.backingScaleFactor;
+}
+
 
 #pragma mark -
 
@@ -726,7 +723,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         return NO;
 }
 
-- (BOOL)areModifierFlagsValid:(NSUInteger)aModifierFlags forKeyCode:(unsigned short)aKeyCode
+- (BOOL)areModifierFlagsValid:(NSEventModifierFlags)aModifierFlags forKeyCode:(unsigned short)aKeyCode
 {
     aModifierFlags &= SRCocoaModifierFlagsMask;
 
@@ -926,6 +923,27 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 }
 
 
+#pragma mark NSCoding
+
+- (instancetype)initWithCoder:(NSCoder *)aCoder
+{
+    // Since Xcode 6.x, user can configure xib to Prefer Coder.
+    // In that case view will be instantiated with initWithCoder.
+    //
+    // awakeFromNib cannot be used to set up defaults for IBDesignable,
+    // because at the time it's called, it's impossible to know whether properties
+    // were set by a user in xib or they are compilation-time defaults.
+    self = [super initWithCoder:aCoder];
+
+    if (self)
+    {
+        [self _initInternalState];
+    }
+
+    return self;
+}
+
+
 #pragma mark NSView
 
 - (BOOL)isOpaque
@@ -944,50 +962,25 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     static dispatch_once_t OnceToken;
     dispatch_once(&OnceToken, ^{
-        if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
-        {
-            _SRImages[0] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-left");
-            _SRImages[1] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-middle");
-            _SRImages[2] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-right");
-            _SRImages[3] = SRImage(@"shortcut-recorder-bezel-editing-left");
-            _SRImages[4] = SRImage(@"shortcut-recorder-bezel-editing-middle");
-            _SRImages[5] = SRImage(@"shortcut-recorder-bezel-editing-right");
-            _SRImages[6] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-left");
-            _SRImages[7] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-middle");
-            _SRImages[8] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-right");
-            _SRImages[9] = SRImage(@"shortcut-recorder-bezel-left");
-            _SRImages[10] = SRImage(@"shortcut-recorder-bezel-middle");
-            _SRImages[11] = SRImage(@"shortcut-recorder-bezel-right");
-            _SRImages[12] = SRImage(@"shortcut-recorder-clear-highlighted");
-            _SRImages[13] = SRImage(@"shortcut-recorder-clear");
-            _SRImages[14] = SRImage(@"shortcut-recorder-snapback-highlighted");
-            _SRImages[15] = SRImage(@"shortcut-recorder-snapback");
-            _SRImages[16] = SRImage(@"shortcut-recorder-bezel-disabled-left");
-            _SRImages[17] = SRImage(@"shortcut-recorder-bezel-disabled-middle");
-            _SRImages[18] = SRImage(@"shortcut-recorder-bezel-disabled-right");
-        }
-        else
-        {
-            _SRImages[0] = SRImage(@"shortcut-recorder-yosemite-bezel-blue-highlighted-left");
-            _SRImages[1] = SRImage(@"shortcut-recorder-yosemite-bezel-blue-highlighted-middle");
-            _SRImages[2] = SRImage(@"shortcut-recorder-yosemite-bezel-blue-highlighted-right");
-            _SRImages[3] = SRImage(@"shortcut-recorder-yosemite-bezel-editing-left");
-            _SRImages[4] = SRImage(@"shortcut-recorder-yosemite-bezel-editing-middle");
-            _SRImages[5] = SRImage(@"shortcut-recorder-yosemite-bezel-editing-right");
-            _SRImages[6] = SRImage(@"shortcut-recorder-yosemite-bezel-graphite-highlight-mask-left");
-            _SRImages[7] = SRImage(@"shortcut-recorder-yosemite-bezel-graphite-highlight-mask-middle");
-            _SRImages[8] = SRImage(@"shortcut-recorder-yosemite-bezel-graphite-highlight-mask-right");
-            _SRImages[9] = SRImage(@"shortcut-recorder-yosemite-bezel-left");
-            _SRImages[10] = SRImage(@"shortcut-recorder-yosemite-bezel-middle");
-            _SRImages[11] = SRImage(@"shortcut-recorder-yosemite-bezel-right");
-            _SRImages[12] = SRImage(@"shortcut-recorder-yosemite-clear-highlighted");
-            _SRImages[13] = SRImage(@"shortcut-recorder-yosemite-clear");
-            _SRImages[14] = SRImage(@"shortcut-recorder-yosemite-snapback-highlighted");
-            _SRImages[15] = SRImage(@"shortcut-recorder-yosemite-snapback");
-            _SRImages[16] = SRImage(@"shortcut-recorder-yosemite-bezel-disabled-left");
-            _SRImages[17] = SRImage(@"shortcut-recorder-yosemite-bezel-disabled-middle");
-            _SRImages[18] = SRImage(@"shortcut-recorder-yosemite-bezel-disabled-right");
-        }
+    _SRImages[0] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-left");
+    _SRImages[1] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-middle");
+    _SRImages[2] = SRImage(@"shortcut-recorder-bezel-blue-highlighted-right");
+    _SRImages[3] = SRImage(@"shortcut-recorder-bezel-editing-left");
+    _SRImages[4] = SRImage(@"shortcut-recorder-bezel-editing-middle");
+    _SRImages[5] = SRImage(@"shortcut-recorder-bezel-editing-right");
+    _SRImages[6] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-left");
+    _SRImages[7] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-middle");
+    _SRImages[8] = SRImage(@"shortcut-recorder-bezel-graphite-highlight-mask-right");
+    _SRImages[9] = SRImage(@"shortcut-recorder-bezel-left");
+    _SRImages[10] = SRImage(@"shortcut-recorder-bezel-middle");
+    _SRImages[11] = SRImage(@"shortcut-recorder-bezel-right");
+    _SRImages[12] = SRImage(@"shortcut-recorder-clear-highlighted");
+    _SRImages[13] = SRImage(@"shortcut-recorder-clear");
+    _SRImages[14] = SRImage(@"shortcut-recorder-snapback-highlighted");
+    _SRImages[15] = SRImage(@"shortcut-recorder-snapback");
+    _SRImages[16] = SRImage(@"shortcut-recorder-bezel-disabled-left");
+    _SRImages[17] = SRImage(@"shortcut-recorder-bezel-disabled-middle");
+    _SRImages[18] = SRImage(@"shortcut-recorder-bezel-disabled-right");
     });
 }
 
@@ -1024,10 +1017,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 - (NSEdgeInsets)alignmentRectInsets
 {
-    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_6 || self.window == nil)
-        return NSEdgeInsetsMake(0.0, 0.0, _SRRecorderControlBottomShadowHeightInPixels, 0.0);
-    else
-        return NSEdgeInsetsMake(0.0, 0.0, _SRRecorderControlBottomShadowHeightInPixels / self.window.backingScaleFactor, 0.0);
+    return NSEdgeInsetsMake(0.0, 0.0, _SRRecorderControlBottomShadowHeightInPixels / self.backingScaleFactor, 0.0);
 }
 
 - (CGFloat)baselineOffsetFromBottom
@@ -1037,8 +1027,13 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     // NSLayoutFormatAlignAllBaseline may not work. For this reason we return the constant.
     // If you're going to change layout of the view, uncomment the line below, look what it typically returns and update the constant.
     // TODO: Hopefully it will be fixed some day in Cocoa and therefore in SRRecorderControl.
-//    CGFloat baseline = fdim(NSHeight(self.bounds), _SRRecorderControlHeight) + floor(_SRRecorderControlBaselineOffset - [self.labelAttributes[NSFontAttributeName] descender]);
-    return 8.0;
+
+    // CGFloat baseline = fdim(NSHeight(self.bounds), _SRRecorderControlHeight) + floor(_SRRecorderControlBaselineOffset - [self.labelAttributes[NSFontAttributeName] descender]);
+    // return baseline;
+    if([_font pointSize] == 11)
+        return 9.5; // JKG hacked to use small control font size
+    else
+        return 8.0;
 }
 
 - (NSSize)intrinsicContentSize
@@ -1049,7 +1044,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 - (void)updateTrackingAreas
 {
-    static const NSUInteger TrackingOptions = NSTrackingMouseEnteredAndExited | NSTrackingActiveWhenFirstResponder | NSTrackingEnabledDuringMouseDrag;
+    static const NSTrackingAreaOptions TrackingOptions = NSTrackingMouseEnteredAndExited | NSTrackingActiveWhenFirstResponder | NSTrackingEnabledDuringMouseDrag;
 
     if (_mainButtonTrackingArea)
         [self removeTrackingArea:_mainButtonTrackingArea];
@@ -1294,7 +1289,13 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     if (self.isRecording)
     {
-        if (self.allowsEscapeToCancelRecording &&
+        if (anEvent.keyCode == USHRT_MAX)
+        {
+            // This shouldn't really happen ever, but was rarely observed.
+            // See https://github.com/Kentzo/ShortcutRecorder/issues/40
+            return NO;
+        }
+        else if (self.allowsEscapeToCancelRecording &&
             anEvent.keyCode == kVK_Escape &&
             (anEvent.modifierFlags & SRCocoaModifierFlagsMask) == 0)
         {
@@ -1343,7 +1344,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 {
     if (self.isRecording)
     {
-        NSUInteger modifierFlags = anEvent.modifierFlags & SRCocoaModifierFlagsMask;
+        NSEventModifierFlags modifierFlags = anEvent.modifierFlags & SRCocoaModifierFlagsMask;
         if (modifierFlags != 0 && ![self areModifierFlagsValid:modifierFlags forKeyCode:anEvent.keyCode])
             NSBeep();
 
