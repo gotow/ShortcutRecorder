@@ -41,8 +41,8 @@
 
 - (void)setTarget: (id)target;
 - (id)target;
-- (void)setObject: (id)object;
-- (id)object;
+- (void)setRepresentedObject: (id)object;
+- (id)representedObject;
 - (void)setAction: (SEL)action;
 - (SEL)action;
 - (void)setKeyUpAction: (SEL)action;
