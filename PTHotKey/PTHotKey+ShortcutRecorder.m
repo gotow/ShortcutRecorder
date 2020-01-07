@@ -32,7 +32,7 @@
     PTHotKey *newHotKey = [[PTHotKey alloc] initWithIdentifier:anIdentifier keyCombo:newKeyCombo];
     [newHotKey setTarget:aTarget];
     [newHotKey setAction:anAction];
-    [newHotKey setObject:anObject];
+    [newHotKey setRepresentedObject:anObject];
     return newHotKey;
 }
 
