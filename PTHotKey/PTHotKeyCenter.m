@@ -26,10 +26,10 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
 
 + (PTHotKeyCenter*)sharedCenter
 {
-	if( _sharedHotKeyCenter == nil )
-	{
-		_sharedHotKeyCenter = [[self alloc] init];
-	}
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _sharedHotKeyCenter = [[self alloc] init];
+    });
 
 	return _sharedHotKeyCenter;
 }
@@ -73,7 +73,7 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
                                     0,
                                     &carbonHotKey );
 
-        if( err )
+        if( err || carbonHotKey == NULL)
             return NO;
 
         [hotKey setCarbonHotKeyID:hotKeyID.id];
@@ -106,20 +106,19 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
 
         carbonHotKey = [hotKey carbonEventHotKeyRef];
 
+        //Watch as we ignore 'err':
+        
         if( carbonHotKey )
-        {
             UnregisterEventHotKey( carbonHotKey );
-            //Watch as we ignore 'err':
+        
+        [mHotKeys removeObjectForKey: [NSNumber numberWithInteger:[hotKey carbonHotKeyID]]];
 
-            [mHotKeys removeObjectForKey: [NSNumber numberWithInteger:[hotKey carbonHotKeyID]]];
+        [hotKey setCarbonHotKeyID:0];
+        [hotKey setCarbonEventHotKeyRef:NULL];
 
-            [hotKey setCarbonHotKeyID:0];
-            [hotKey setCarbonEventHotKeyRef:NULL];
+        [self _updateEventHandler];
 
-            [self _updateEventHandler];
-
-            //See that? Completely ignored
-        }
+        //See that? Completely ignored
     }
     else
     {
@@ -137,13 +136,13 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
 
 - (PTHotKey*)hotKeyWithIdentifier: (id)ident
 {
-	NSEnumerator* hotKeysEnum = [[self allHotKeys] objectEnumerator];
+	NSEnumerator* e = [mHotKeys objectEnumerator];
 	PTHotKey* hotKey;
 
 	if( !ident )
 		return nil;
 
-	while( (hotKey = [hotKeysEnum nextObject]) != nil )
+	while( (hotKey = [e nextObject]) != nil )
 	{
 		if( [[hotKey identifier] isEqual: ident] )
 			return hotKey;
@@ -157,9 +156,9 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
 - (PTHotKey*)_hotKeyForCarbonHotKey: (EventHotKeyRef)carbonHotKeyRef
 {
 	NSEnumerator *e = [mHotKeys objectEnumerator];
-	PTHotKey *hotkey = nil;
+	PTHotKey *hotkey;
 
-	while( (hotkey = [e nextObject]) )
+	while( (hotkey = [e nextObject]) != nil )
 	{
 		if( [hotkey carbonEventHotKeyRef] == carbonHotKeyRef )
 			return hotkey;
@@ -250,8 +249,8 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
 	if( err )
 		return err;
 
-    	if( hotKeyID.signature != 'PTHk' )
-        	return eventNotHandledErr;
+    if( hotKeyID.signature != 'PTHk' )
+        return eventNotHandledErr;
 
 	NSAssert( hotKeyID.id != 0, @"Invalid hot key id" );
 
@@ -285,7 +284,8 @@ static PTHotKeyCenter *_sharedHotKeyCenter = nil;
     {
         PTHotKey *hotKey = [mHotKeys objectForKey:hotKeyID];
         EventHotKeyRef carbonHotKey = [hotKey carbonEventHotKeyRef];
-        UnregisterEventHotKey( carbonHotKey );
+        if( carbonHotKey )
+            UnregisterEventHotKey( carbonHotKey );
         [hotKey setCarbonEventHotKeyRef:NULL];
     }
     if (mEventHandler != NULL)
