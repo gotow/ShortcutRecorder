@@ -83,7 +83,7 @@
 
                 NSString *shortcut = isASCIIOnly ? SRReadableASCIIStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode) : SRReadableStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode);
                 NSString *failureReason = [NSString stringWithFormat:
-                                           SRLoc(@"The key combination \"%@\" can't be used!"),
+                                           SRLoc(@"The key combination \"%@\" can't be used."),
                                            shortcut];
                 NSString *description = [NSString stringWithFormat:
                                          SRLoc(@"The key combination \"%@\" can't be used because %@."),
@@ -124,9 +124,13 @@
         if (symbolicHotKeyCode == aKeyCode)
         {
             UInt32 symbolicHotKeyFlags = [symbolicHotKey[(__bridge NSString *)kHISymbolicHotKeyModifiers] unsignedIntValue];
-            symbolicHotKeyFlags &= SRCarbonModifierFlagsMask;
+            NSEventModifierFlags cocoaModifiers = SRCarbonToCocoaFlags(symbolicHotKeyFlags & SRCarbonModifierFlagsMask);
 
-            if (SRCarbonToCocoaFlags(symbolicHotKeyFlags) == aFlags)
+            // Allow Command-Shift-F, because I can't find anywhere that the system actually uses it
+            if (symbolicHotKeyCode == kVK_ANSI_F && cocoaModifiers == (NSEventModifierFlagCommand | NSEventModifierFlagShift))
+                continue;
+               
+            if (cocoaModifiers == aFlags)
             {
                 if (outError)
                 {
@@ -137,10 +141,10 @@
 
                     NSString *shortcut = isASCIIOnly ? SRReadableASCIIStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode) : SRReadableStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode);
                     NSString *failureReason = [NSString stringWithFormat:
-                                               SRLoc(@"The key combination \"%@\" can't be used!"),
+                                               SRLoc(@"The key combination \"%@\" can't be used."),
                                                shortcut];
                     NSString *description = [NSString stringWithFormat:
-                                             SRLoc(@"The key combination \"%@\" can't be used because it's already used by a system-wide keyboard shortcut. If you really want to use this key combination, most shortcuts can be changed in the Keyboard panel in System Preferences."),
+                                             SRLoc(@"The key combination \"%@\" can't be used because it's already a system-wide keyboard shortcut.\n\nMost system-wide keyboard shortcuts can be changed in System Settings › Keyboard › Keyboard Shortcuts."),
                                              shortcut];
                     NSDictionary *userInfo = @{
                         NSLocalizedFailureReasonErrorKey: failureReason,
@@ -183,7 +187,7 @@
                     isASCIIOnly = [self.delegate shortcutValidatorShouldUseASCIIStringForKeyCodes:self];
 
                 NSString *shortcut = isASCIIOnly ? SRReadableASCIIStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode) : SRReadableStringForCocoaModifierFlagsAndKeyCode(aFlags, aKeyCode);
-                NSString *failureReason = [NSString stringWithFormat:SRLoc(@"The key combination \"%@\" can't be used!"), shortcut];
+                NSString *failureReason = [NSString stringWithFormat:SRLoc(@"The key combination \"%@\" can't be used."), shortcut];
                 NSString *description = [NSString stringWithFormat:SRLoc(@"The key combination \"%@\" can't be used because it's already used by the menu item \"%@\"."), shortcut, menuItem.SR_path];
                 NSDictionary *userInfo = @{
                     NSLocalizedFailureReasonErrorKey: failureReason,
