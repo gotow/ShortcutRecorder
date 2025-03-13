@@ -16,7 +16,6 @@
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
 
-
 /*!
     Mask representing subset of Cocoa modifier flags suitable for shortcuts.
  */
