@@ -7,7 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "PTHotKey.h"
+#import <PTHotkey/PTHotKey.h>
 
 
 @interface PTHotKey (ShortcutRecorder)

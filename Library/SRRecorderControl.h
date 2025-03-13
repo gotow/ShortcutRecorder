@@ -13,7 +13,7 @@
 //      Ilya Kulakov
 
 #import <Cocoa/Cocoa.h>
-#import "SRCommon.h"
+#import <ShortcutRecorder/SRCommon.h>
 
 
 /*!

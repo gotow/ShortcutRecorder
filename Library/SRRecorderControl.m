@@ -13,6 +13,7 @@
 //      Ilya Kulakov
 
 #include <limits.h>
+#include <AppKit/NSAccessibilityProtocols.h>
 
 #import "SRRecorderControl.h"
 #import "SRKeyCodeTransformer.h"
@@ -192,7 +193,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         [self endRecording];
 
     // Focus ring is only drawn when view is enabled
-    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6)
+    if (floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_6 && self.focusRingType != NSFocusRingTypeNone)
         [self noteFocusRingMaskChanged];
 }
 
@@ -487,7 +488,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     static NSDictionary *NormalAttributes = nil;
     dispatch_once(&OnceToken, ^{
         NSMutableParagraphStyle *p = [[NSMutableParagraphStyle alloc] init];
-        p.alignment = NSCenterTextAlignment;
+        p.alignment = NSTextAlignmentCenter;
         p.lineBreakMode = NSLineBreakByTruncatingTail;
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         NormalAttributes = @{
@@ -505,7 +506,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     static NSDictionary *RecordingAttributes = nil;
     dispatch_once(&OnceToken, ^{
         NSMutableParagraphStyle *p = [[NSMutableParagraphStyle alloc] init];
-        p.alignment = NSCenterTextAlignment;
+        p.alignment = NSTextAlignmentCenter;
         p.lineBreakMode = NSLineBreakByTruncatingTail;
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         RecordingAttributes = @{
@@ -523,7 +524,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     static NSDictionary *DisabledAttributes = nil;
     dispatch_once(&OnceToken, ^{
         NSMutableParagraphStyle *p = [[NSMutableParagraphStyle alloc] init];
-        p.alignment = NSCenterTextAlignment;
+        p.alignment = NSTextAlignmentCenter;
         p.lineBreakMode = NSLineBreakByTruncatingTail;
         p.baseWritingDirection = NSWritingDirectionLeftToRight;
         DisabledAttributes = @{
@@ -625,14 +626,14 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     {
         [_SRImages[14] drawInRect:imageRect
                          fromRect:NSZeroRect
-                        operation:NSCompositeSourceOver
+                        operation:NSCompositingOperationSourceOver
                          fraction:1.0];
     }
     else
     {
         [_SRImages[15] drawInRect:imageRect
                          fromRect:NSZeroRect
-                        operation:NSCompositeSourceOver
+                        operation:NSCompositingOperationSourceOver
                          fraction:1.0];
     }
 
@@ -662,14 +663,14 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     {
         [_SRImages[12] drawInRect:imageRect
                          fromRect:NSZeroRect
-                        operation:NSCompositeSourceOver
+                        operation:NSCompositingOperationSourceOver
                          fraction:1.0];
     }
     else
     {
         [_SRImages[13] drawInRect:imageRect
                          fromRect:NSZeroRect
-                        operation:NSCompositeSourceOver
+                        operation:NSCompositingOperationSourceOver
                          fraction:1.0];
     }
 
@@ -1003,13 +1004,13 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 - (void)drawFocusRingMask
 {
-    if (self.enabled && self.window.firstResponder == self)
+    if (self.enabled && self.window.firstResponder == self && self.focusRingType != NSFocusRingTypeNone)
         [self.controlShape fill];
 }
 
 - (NSRect)focusRingMaskBounds
 {
-    if (self.enabled && self.window.firstResponder == self)
+    if (self.enabled && self.window.firstResponder == self && self.focusRingType != NSFocusRingTypeNone)
         return self.controlShape.bounds;
     else
         return NSZeroRect;
