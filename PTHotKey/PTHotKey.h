@@ -10,7 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import <Carbon/Carbon.h>
-#import <PTHotkey/PTKeyCombo.h>
+#import <PTHotKey/PTKeyCombo.h>
 
 @interface PTHotKey : NSObject
 {
