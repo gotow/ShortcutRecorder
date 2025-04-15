@@ -23,10 +23,10 @@ NSString *SRReadableStringForCocoaModifierFlagsAndKeyCode(NSEventModifierFlags a
     NSString *c = [t transformedValue:@(aKeyCode)];
 
     return [NSString stringWithFormat:@"%@%@%@%@%@",
-                                      (aModifierFlags & NSEventModifierFlagCommand ? SRLoc(@"Command-") : @""),
-                                      (aModifierFlags & NSEventModifierFlagOption ? SRLoc(@"Option-") : @""),
-                                      (aModifierFlags & NSEventModifierFlagControl ? SRLoc(@"Control-") : @""),
-                                      (aModifierFlags & NSEventModifierFlagShift ? SRLoc(@"Shift-") : @""),
+            (aModifierFlags & NSEventModifierFlagCommand ? SRLoc(@"Command-") : @""),
+            (aModifierFlags & NSEventModifierFlagOption ? SRLoc(@"Option-") : @""),
+            (aModifierFlags & NSEventModifierFlagControl ? SRLoc(@"Control-") : @""),
+            (aModifierFlags & NSEventModifierFlagShift ? SRLoc(@"Shift-") : @""),
                                       c];
 }
 
