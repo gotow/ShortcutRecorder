@@ -13,6 +13,18 @@
 
 @implementation PTHotKey
 
++ (PTHotKey *)hotKeyWithObject: (id)object
+{
+    return [PTHotKey hotKeyWithIdentifier: nil keyCombo: nil withObject: object];
+}
+
++ (PTHotKey *)hotKeyWithIdentifier: (id)identifier keyCombo: (PTKeyCombo*)combo withObject: (id)object
+{
+    PTHotKey *hotKey = [[PTHotKey alloc] initWithIdentifier: identifier keyCombo: combo withObject: object];
+    
+    return hotKey;
+}
+
 - (id)init
 {
     return [self initWithIdentifier: nil keyCombo: nil withObject:nil];

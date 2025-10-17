@@ -26,6 +26,9 @@
 	EventHotKeyRef	mCarbonEventHotKeyRef;
 }
 
++ (PTHotKey *)hotKeyWithObject: (id)object;
++ (PTHotKey *)hotKeyWithIdentifier: (id)identifier keyCombo: (PTKeyCombo*)combo withObject: (id)object;
+
 - (id)initWithIdentifier: (id)identifier keyCombo: (PTKeyCombo*)combo;
 - (id)initWithIdentifier: (id)identifier keyCombo: (PTKeyCombo*)combo withObject: (id)object;
 - (id)init;
