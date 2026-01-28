@@ -577,6 +577,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         }
     }
     [pathColor setStroke];
+    [path setLineWidth:1];
     [path stroke];
     [fillColor setFill];
     [path fill];
