@@ -20,12 +20,12 @@
 /*!
     Mask representing subset of Cocoa modifier flags suitable for shortcuts.
  */
-static const NSEventModifierFlags SRCocoaModifierFlagsMask = NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagShift | NSEventModifierFlagControl;
+static const NSEventModifierFlags SRCocoaModifierFlagsMask = NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagShift | NSEventModifierFlagControl | NSEventModifierFlagFunction;
 
 /*!
     Mask representing subset of Carbon modifier flags suitable for shortcuts.
  */
-static const NSUInteger SRCarbonModifierFlagsMask = cmdKey | optionKey | shiftKey | controlKey;
+static const NSUInteger SRCarbonModifierFlagsMask = cmdKey | optionKey | shiftKey | controlKey | kEventKeyModifierFnMask;
 
 
 /*!
@@ -46,6 +46,9 @@ FOUNDATION_STATIC_INLINE NSEventModifierFlags SRCarbonToCocoaFlags(UInt32 aCarbo
 
     if (aCarbonFlags & shiftKey)
         cocoaFlags |= NSEventModifierFlagShift;
+
+    if (aCarbonFlags & kEventKeyModifierFnMask)
+        cocoaFlags |= NSEventModifierFlagFunction;
 
     return cocoaFlags;
 }
@@ -68,6 +71,9 @@ FOUNDATION_STATIC_INLINE UInt32 SRCocoaToCarbonFlags(NSEventModifierFlags aCocoa
 
     if (aCocoaFlags & NSEventModifierFlagShift)
         carbonFlags |= shiftKey;
+
+    if (aCocoaFlags & NSEventModifierFlagFunction)
+        carbonFlags |= kEventKeyModifierFnMask;
 
     return carbonFlags;
 }

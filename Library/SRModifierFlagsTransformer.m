@@ -89,6 +89,9 @@
         if (modifierFlags & NSEventModifierFlagCommand)
             [s appendString:SRLoc(@"Command-")];
 
+        if (modifierFlags & NSEventModifierFlagFunction)
+            [s appendString:SRLoc(@"Fn-")];
+
         if (s.length > 0)
             [s deleteCharactersInRange:NSMakeRange(s.length - 1, 1)];
 
@@ -97,7 +100,8 @@
     else
     {
         NSEventModifierFlags f = [aValue unsignedIntegerValue];
-        return [NSString stringWithFormat:@"%@%@%@%@",
+        return [NSString stringWithFormat:@"%@%@%@%@%@",
+                (f & NSEventModifierFlagFunction ? @"􀆪" : @""),
                 (f & NSEventModifierFlagControl ? @"⌃" : @""),
                 (f & NSEventModifierFlagOption ? @"⌥" : @""),
                 (f & NSEventModifierFlagShift ? @"⇧" : @""),
