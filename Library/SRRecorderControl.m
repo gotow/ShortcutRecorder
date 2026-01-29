@@ -13,6 +13,7 @@
 //      Ilya Kulakov
 
 #include <limits.h>
+#include <os/log.h>
 #include <AppKit/NSAccessibilityProtocols.h>
 
 #import "SRRecorderControl.h"
@@ -337,7 +338,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
 #ifdef DEBUG
     if (labelRect.size.width < labelSize.width || labelRect.size.height < labelSize.height)
-        NSLog(@"WARNING: label rect (%@) is smaller than label size (%@). You may want to adjust size of the control.", NSStringFromRect(labelRect), NSStringFromSize(labelSize));
+        os_log(OS_LOG_DEFAULT, "WARNING: label rect (%{public}@) is smaller than label size (%{public}@). You may want to adjust size of the control.", NSStringFromRect(labelRect), NSStringFromSize(labelSize));
 #endif
 
     return labelRect;
@@ -577,6 +578,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         }
     }
     [pathColor setStroke];
+    [path setLineWidth:1];
     [path stroke];
     [fillColor setFill];
     [path fill];
@@ -785,7 +787,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
                 aValue = [transformer reverseTransformedValue:aValue];
 #ifdef DEBUG
             else
-                NSLog(@"WARNING: binding \"%@\" has value transformer, but it doesn't allow reverse transformations in %s", aBinding, __PRETTY_FUNCTION__);
+                os_log(OS_LOG_DEFAULT, "WARNING: binding \"%{public}@\" has value transformer, but it doesn't allow reverse transformations in %s", aBinding, __PRETTY_FUNCTION__);
 #endif
         }
     }
