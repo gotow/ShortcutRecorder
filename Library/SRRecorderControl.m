@@ -44,6 +44,8 @@ static const CGFloat _SRRecorderControlShapeXRadius = 11.0;
 
 static const CGFloat _SRRecorderControlShapeYRadius = 12.0;
 
+static const CGFloat _SRRecorderControlTahoeHeight = 26.0;
+
 static const CGFloat _SRRecorderControlHeight = 25.0;
 
 static const CGFloat _SRRecorderControlBottomShadowHeightInPixels = 1.0;
@@ -98,6 +100,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     _SRRecorderControlButtonTag _mouseTrackingButtonTag;
     NSToolTipTag _snapBackButtonToolTipTag;
 
+    CGFloat _controlHeight;
     CGFloat _shapeXRadius;
     CGFloat _shapeYRadius;
 }
@@ -144,6 +147,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 
     if (@available(macOS 26, *))
     {
+        _controlHeight = _SRRecorderControlTahoeHeight;
         _shapeXRadius = _SRRecorderControlTahoeShapeXRadius;
         _shapeYRadius = _SRRecorderControlTahoeShapeYRadius;
         self.bezel = [[NSButtonCell alloc] init];
@@ -152,11 +156,13 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     }
     else if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
     {
+        _controlHeight = _SRRecorderControlHeight;
         _shapeXRadius = _SRRecorderControlShapeXRadius;
         _shapeYRadius = _SRRecorderControlShapeYRadius;
     }
     else
     {
+        _controlHeight = _SRRecorderControlHeight;
         _shapeXRadius = _SRRecorderControlYosemiteShapeXRadius;
         _shapeYRadius = _SRRecorderControlYosemiteShapeYRadius;
     }
@@ -305,7 +311,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 - (NSBezierPath *)controlShape
 {
     NSRect shapeBounds = self.bounds;
-    shapeBounds.size.height = _SRRecorderControlHeight - self.alignmentRectInsets.bottom;
+    shapeBounds.size.height = _controlHeight - self.alignmentRectInsets.bottom;
 
     if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
     {
@@ -324,7 +330,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     labelSize.width = fmin(ceil(labelSize.width), NSWidth(enclosingRect));
     labelSize.height = ceil(labelSize.height);
     CGFloat fontBaselineOffsetFromTop = labelSize.height + [anAttributes[NSFontAttributeName] descender];
-    CGFloat baselineOffsetFromTop = _SRRecorderControlHeight - self.baselineOffsetFromBottom;
+    CGFloat baselineOffsetFromTop = _controlHeight - self.baselineOffsetFromBottom;
     NSRect labelRect = {
         .origin = NSMakePoint(NSMidX(enclosingRect) - labelSize.width / 2.0, baselineOffsetFromTop - fontBaselineOffsetFromTop),
         .size = labelSize
@@ -364,7 +370,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     snapBackButtonRect.origin.x = NSMinX(clearButtonRect) - _SRRecorderControlSnapBackButtonRightOffset - _SRRecorderControlSnapBackButtonSize.width - _SRRecorderControlSnapBackButtonLeftOffset;
     snapBackButtonRect.origin.y = NSMinY(bounds);
     snapBackButtonRect.size.width = fdim(NSMinX(clearButtonRect), NSMinX(snapBackButtonRect));
-    snapBackButtonRect.size.height = _SRRecorderControlHeight;
+    snapBackButtonRect.size.height = _controlHeight;
     return snapBackButtonRect;
 }
 
@@ -378,7 +384,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         clearButtonRect.origin.x = NSMaxX(bounds) - _SRRecorderControlClearButtonRightOffset - _SRRecorderControlClearButtonSize.width - _SRRecorderControlClearButtonLeftOffset;
         clearButtonRect.origin.y = NSMinY(bounds);
         clearButtonRect.size.width = fdim(NSMaxX(bounds), NSMinX(clearButtonRect));
-        clearButtonRect.size.height = _SRRecorderControlHeight;
+        clearButtonRect.size.height = _controlHeight;
         return clearButtonRect;
     }
     else
@@ -386,7 +392,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
         return NSMakeRect(NSMaxX(bounds) - _SRRecorderControlClearButtonRightOffset - _SRRecorderControlClearButtonLeftOffset,
                           NSMinY(bounds),
                           0.0,
-                          _SRRecorderControlHeight);
+                          _controlHeight);
     }
 }
 
@@ -555,7 +561,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 - (void)drawBackground:(NSRect)aDirtyRect
 {
     NSRect frame = self.bounds;
-    frame.size.height = _SRRecorderControlHeight;
+    frame.size.height = _controlHeight;
 
     if (![self needsToDrawRect:frame])
         return;
@@ -1052,7 +1058,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     // If you're going to change layout of the view, uncomment the line below, look what it typically returns and update the constant.
     // TODO: Hopefully it will be fixed some day in Cocoa and therefore in SRRecorderControl.
 
-    // CGFloat baseline = fdim(NSHeight(self.bounds), _SRRecorderControlHeight) + floor(_SRRecorderControlBaselineOffset - [self.labelAttributes[NSFontAttributeName] descender]);
+    // CGFloat baseline = fdim(NSHeight(self.bounds), _controlHeight) + floor(_SRRecorderControlBaselineOffset - [self.labelAttributes[NSFontAttributeName] descender]);
     // return baseline;
     if([_font pointSize] == 11)
         return 9.5; // JKG hacked to use small control font size
@@ -1063,7 +1069,7 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
 - (NSSize)intrinsicContentSize
 {
     return NSMakeSize(NSWidth([self rectForLabel:SRLoc(@"Click to record shortcut") withAttributes:self.normalLabelAttributes]) + _shapeXRadius + _shapeXRadius,
-                      _SRRecorderControlHeight);
+                      _controlHeight);
 }
 
 - (void)updateTrackingAreas
