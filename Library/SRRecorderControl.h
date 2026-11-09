@@ -151,6 +151,11 @@ IB_DESIGNABLE
 @property (nonatomic, retain) NSFont *font;
 
 /*!
+ An NSButtonCell to draw our background on newer systems.
+ */
+@property (nonatomic, retain) NSButtonCell *bezel;
+
+/*!
     Configures recording behavior of the control.
 
     @param      newAllowedModifierFlags New allowed modifier flags.

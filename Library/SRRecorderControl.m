@@ -32,6 +32,10 @@ NSString *const SRShortcutCharactersIgnoringModifiers = @"charactersIgnoringModi
 
 // Control Layout Constants
 
+static const CGFloat _SRRecorderControlTahoeShapeXRadius = 6.0;
+
+static const CGFloat _SRRecorderControlTahoeShapeYRadius = 6.0;
+
 static const CGFloat _SRRecorderControlYosemiteShapeXRadius = 2.0;
 
 static const CGFloat _SRRecorderControlYosemiteShapeYRadius = 2.0;
@@ -138,7 +142,15 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
                                        forOrientation:NSLayoutConstraintOrientationVertical];
     }
 
-    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
+    if (@available(macOS 26, *))
+    {
+        _shapeXRadius = _SRRecorderControlTahoeShapeXRadius;
+        _shapeYRadius = _SRRecorderControlTahoeShapeYRadius;
+        self.bezel = [[NSButtonCell alloc] init];
+        self.bezel.bezelStyle = NSBezelStylePush;
+        self.bezel.buttonType = NSButtonTypeMomentaryPushIn;
+    }
+    else if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_9)
     {
         _shapeXRadius = _SRRecorderControlShapeXRadius;
         _shapeYRadius = _SRRecorderControlShapeYRadius;
@@ -554,34 +566,43 @@ typedef NS_ENUM(NSUInteger, _SRRecorderControlButtonTag)
     NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:frame xRadius:_shapeXRadius yRadius:_shapeXRadius];
     NSColor *pathColor, *fillColor;
     
-    if (self.isRecording)
+    if (@available(macOS 26, *))
     {
-        pathColor = [NSColor underPageBackgroundColor];
-        fillColor = [NSColor controlColor];
+        self.bezel.highlighted = self.isMainButtonHighlighted;
+        self.bezel.enabled = self.enabled;
+        
+        [self.bezel drawBezelWithFrame:self.bounds inView:self];
     }
-    else
-    {
-        if (self.isMainButtonHighlighted)
-        {
-            pathColor = [NSColor underPageBackgroundColor];
-            fillColor = [NSColor selectedControlColor];
-        }
-        else if (self.enabled)
+    else {
+        if (self.isRecording)
         {
             pathColor = [NSColor underPageBackgroundColor];
             fillColor = [NSColor controlColor];
         }
         else
         {
-            pathColor = [NSColor gridColor];
-            fillColor = [NSColor controlColor];
+            if (self.isMainButtonHighlighted)
+            {
+                pathColor = [NSColor underPageBackgroundColor];
+                fillColor = [NSColor selectedControlColor];
+            }
+            else if (self.enabled)
+            {
+                pathColor = [NSColor underPageBackgroundColor];
+                fillColor = [NSColor controlColor];
+            }
+            else
+            {
+                pathColor = [NSColor gridColor];
+                fillColor = [NSColor controlColor];
+            }
         }
+        [pathColor setStroke];
+        [path setLineWidth:1];
+        [path stroke];
+        [fillColor setFill];
+        [path fill];
     }
-    [pathColor setStroke];
-    [path setLineWidth:1];
-    [path stroke];
-    [fillColor setFill];
-    [path fill];
 
     [NSGraphicsContext restoreGraphicsState];
 }
